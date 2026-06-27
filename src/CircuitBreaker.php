@@ -14,8 +14,17 @@ use Throwable;
 
 class CircuitBreaker
 {
+    /** Request rejected without running the action. */
+    protected const PERMIT_DENY = 0;
+
+    /** Circuit closed; action runs without consuming a trial slot. */
+    protected const PERMIT_PASS = 1;
+
+    /** Half-open trial slot acquired; must be released after the call. */
+    protected const PERMIT_PROBE = 2;
+
     /**
-     * @param  array{failure_threshold:int,success_threshold:int,reset_timeout:int,sample_window:int,handle:array<int,class-string<Throwable>>}  $config
+     * @param  array{failure_threshold:int,success_threshold:int,reset_timeout:int,sample_window:int,half_open_max_attempts:int,handle:array<int,class-string<Throwable>>}  $config
      */
     public function __construct(
         protected readonly string $name,
@@ -43,7 +52,9 @@ class CircuitBreaker
      */
     public function call(callable $action, ?callable $fallback = null): mixed
     {
-        if (! $this->allowsRequest()) {
+        $permit = $this->acquirePermit();
+
+        if ($permit === self::PERMIT_DENY) {
             $exception = new CircuitOpenException($this->name);
 
             if ($fallback !== null) {
@@ -65,6 +76,10 @@ class CircuitBreaker
             }
 
             throw $e;
+        } finally {
+            if ($permit === self::PERMIT_PROBE) {
+                $this->store->decrementInFlight($this->name);
+            }
         }
 
         $this->recordSuccess();
@@ -73,24 +88,48 @@ class CircuitBreaker
     }
 
     /**
-     * Whether a request is currently allowed through the circuit.
-     * Side effect: transitions an expired open circuit to half-open.
+     * Whether a request would be admitted right now. Pure read: unlike {@see call()}
+     * it neither transitions the circuit nor consumes a half-open trial slot.
      */
     public function allowsRequest(): bool
     {
         $state = $this->store->state($this->name);
 
-        if ($state === State::Open) {
-            if ($this->timeoutHasElapsed()) {
-                $this->toHalfOpen();
+        return $state !== State::Open || $this->timeoutHasElapsed();
+    }
 
-                return true;
+    /**
+     * Decide whether the current call may proceed. When the open timeout has
+     * elapsed the circuit is moved to half-open and a limited number of trial
+     * slots are handed out; excess concurrent requests are rejected so a
+     * recovering dependency is not immediately flooded.
+     */
+    protected function acquirePermit(): int
+    {
+        $state = $this->store->state($this->name);
+
+        if ($state === State::Open) {
+            if (! $this->timeoutHasElapsed()) {
+                return self::PERMIT_DENY;
             }
 
-            return false;
+            $this->toHalfOpen();
+            $state = State::HalfOpen;
         }
 
-        return true;
+        if ($state === State::HalfOpen) {
+            $inFlight = $this->store->incrementInFlight($this->name, $this->config['reset_timeout']);
+
+            if ($inFlight > $this->config['half_open_max_attempts']) {
+                $this->store->decrementInFlight($this->name);
+
+                return self::PERMIT_DENY;
+            }
+
+            return self::PERMIT_PROBE;
+        }
+
+        return self::PERMIT_PASS;
     }
 
     public function state(): State
@@ -100,9 +139,7 @@ class CircuitBreaker
 
     public function isAvailable(): bool
     {
-        $state = $this->store->state($this->name);
-
-        return $state !== State::Open || $this->timeoutHasElapsed();
+        return $this->allowsRequest();
     }
 
     public function recordFailure(): void

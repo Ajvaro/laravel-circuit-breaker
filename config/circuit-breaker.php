@@ -43,11 +43,13 @@ return [
     | Default Circuit Settings
     |--------------------------------------------------------------------------
     |
-    | failure_threshold : consecutive/windowed failures before the circuit opens.
-    | success_threshold : successes in half-open state before the circuit closes.
-    | reset_timeout     : seconds a circuit stays open before a trial (half-open).
-    | sample_window     : seconds over which failures are counted while closed.
-    | handle            : exception types that count as failures.
+    | failure_threshold     : consecutive/windowed failures before the circuit opens.
+    | success_threshold     : successes in half-open state before the circuit closes.
+    | reset_timeout         : seconds a circuit stays open before a trial (half-open).
+    | sample_window         : seconds over which failures are counted while closed.
+    | half_open_max_attempts: concurrent trial calls allowed while half-open, so a
+    |                         recovering dependency is probed rather than flooded.
+    | handle                : exception types that count as failures.
     |
     */
 
@@ -56,6 +58,7 @@ return [
         'success_threshold' => 2,
         'reset_timeout' => 60,
         'sample_window' => 60,
+        'half_open_max_attempts' => 1,
         'handle' => [
             \Throwable::class,
         ],
