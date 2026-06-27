@@ -1,0 +1,46 @@
+{
+    "name": "nikola/laravel-circuit-breaker",
+    "description": "Circuit breaker pattern for Laravel: protect calls to external/internal services with named circuits, configurable thresholds, and Redis or database state stores.",
+    "keywords": [
+        "laravel",
+        "circuit-breaker",
+        "resilience",
+        "fault-tolerance",
+        "redis"
+    ],
+    "license": "MIT",
+    "require": {
+        "php": "^8.2",
+        "illuminate/support": "^10.0|^11.0|^12.0",
+        "illuminate/contracts": "^10.0|^11.0|^12.0"
+    },
+    "require-dev": {
+        "orchestra/testbench": "^8.0|^9.0|^10.0",
+        "phpunit/phpunit": "^10.0|^11.0"
+    },
+    "autoload": {
+        "psr-4": {
+            "Nikola\\CircuitBreaker\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Nikola\\CircuitBreaker\\Tests\\": "tests/"
+        }
+    },
+    "extra": {
+        "laravel": {
+            "providers": [
+                "Nikola\\CircuitBreaker\\CircuitBreakerServiceProvider"
+            ],
+            "aliases": {
+                "CircuitBreaker": "Nikola\\CircuitBreaker\\Facades\\CircuitBreaker"
+            }
+        }
+    },
+    "config": {
+        "sort-packages": true
+    },
+    "minimum-stability": "dev",
+    "prefer-stable": true
+}
