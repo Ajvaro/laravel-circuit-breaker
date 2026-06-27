@@ -33,6 +33,7 @@ abstract class TestCase extends Orchestra
             'success_threshold' => 2,
             'reset_timeout' => 60,
             'sample_window' => 60,
+            'half_open_max_attempts' => 1,
             'handle' => [\Throwable::class],
         ]);
     }

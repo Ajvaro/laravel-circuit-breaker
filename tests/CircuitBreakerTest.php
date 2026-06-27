@@ -21,6 +21,7 @@ class CircuitBreakerTest extends TestCase
             'success_threshold' => 2,
             'reset_timeout' => 60,
             'sample_window' => 60,
+            'half_open_max_attempts' => 1,
             'handle' => [\Throwable::class],
         ], $overrides));
     }
@@ -133,6 +134,43 @@ class CircuitBreakerTest extends TestCase
         }
 
         $this->assertSame(State::Open, $breaker->state());
+    }
+
+    public function test_half_open_rejects_trial_requests_beyond_the_limit(): void
+    {
+        $store = new InMemoryStore();
+        $store->transition('service', State::HalfOpen);
+        $breaker = $this->breaker($store, [
+            'half_open_max_attempts' => 1,
+            'success_threshold' => 5,
+        ]);
+
+        $concurrent = null;
+
+        // While this probe is in flight, a second concurrent request must be
+        // rejected rather than piling onto the recovering dependency.
+        $result = $breaker->call(function () use ($breaker, &$concurrent) {
+            $concurrent = $breaker->call(
+                fn () => 'second',
+                fn ($e) => $e,
+            );
+
+            return 'first';
+        });
+
+        $this->assertSame('first', $result);
+        $this->assertInstanceOf(CircuitOpenException::class, $concurrent);
+    }
+
+    public function test_half_open_allows_sequential_trial_requests(): void
+    {
+        $store = new InMemoryStore();
+        $store->transition('service', State::HalfOpen);
+        $breaker = $this->breaker($store, ['half_open_max_attempts' => 1]);
+
+        // Each probe releases its slot, so the next sequential trial is admitted.
+        $this->assertSame('one', $breaker->call(fn () => 'one'));
+        $this->assertSame('two', $breaker->call(fn () => 'two'));
     }
 
     public function test_unhandled_exceptions_do_not_count_as_failures(): void

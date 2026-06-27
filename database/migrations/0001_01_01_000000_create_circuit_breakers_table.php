@@ -15,6 +15,7 @@ return new class extends Migration
             $table->string('state')->default('closed');
             $table->unsignedInteger('failures')->default(0);
             $table->unsignedInteger('successes')->default(0);
+            $table->unsignedInteger('in_flight')->default(0);
             $table->unsignedInteger('failed_at')->nullable();
             $table->unsignedInteger('opened_at')->nullable();
             $table->unsignedInteger('updated_at')->nullable();

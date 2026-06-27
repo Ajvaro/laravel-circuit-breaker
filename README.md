@@ -16,7 +16,7 @@ CLOSED  ──(failures >= failure_threshold)──▶  OPEN
 
 - **Closed** – calls pass through; failures are counted within a rolling `sample_window`.
 - **Open** – calls fail fast (throw `CircuitOpenException` or run a fallback) until `reset_timeout` elapses.
-- **Half-open** – a limited number of trial calls are allowed; enough successes close the circuit, any failure reopens it.
+- **Half-open** – up to `half_open_max_attempts` concurrent trial calls are allowed through (the rest fail fast, exactly as if open); enough successes close the circuit, any failure reopens it. This keeps a recovering dependency from being flooded the instant `reset_timeout` elapses.
 
 ## Requirements
 
@@ -66,11 +66,12 @@ return [
     ],
 
     'defaults' => [
-        'failure_threshold' => 5,  // failures (within sample_window) before opening
-        'success_threshold' => 2,  // half-open successes before closing
-        'reset_timeout'     => 60, // seconds open before a half-open trial
-        'sample_window'     => 60, // seconds failures are counted over
-        'handle'            => [\Throwable::class], // which exceptions count as failures
+        'failure_threshold'      => 5,  // failures (within sample_window) before opening
+        'success_threshold'      => 2,  // half-open successes before closing
+        'reset_timeout'          => 60, // seconds open before a half-open trial
+        'sample_window'          => 60, // seconds failures are counted over
+        'half_open_max_attempts' => 1,  // concurrent trial calls allowed while half-open
+        'handle'                 => [\Throwable::class], // which exceptions count as failures
     ],
 
     'circuits' => [

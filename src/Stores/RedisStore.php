@@ -49,6 +49,27 @@ class RedisStore implements Store
         return (int) $this->connection()->incr($this->key($name, 'successes'));
     }
 
+    public function incrementInFlight(string $name, int $ttl): int
+    {
+        $key = $this->key($name, 'in_flight');
+        $count = (int) $this->connection()->incr($key);
+
+        if ($count === 1 && $ttl > 0) {
+            $this->connection()->expire($key, $ttl);
+        }
+
+        return $count;
+    }
+
+    public function decrementInFlight(string $name): void
+    {
+        $key = $this->key($name, 'in_flight');
+
+        if ((int) $this->connection()->decr($key) < 0) {
+            $this->connection()->del($key);
+        }
+    }
+
     public function transition(string $name, State $to): void
     {
         $connection = $this->connection();
@@ -59,6 +80,8 @@ class RedisStore implements Store
 
         if ($to === State::Open) {
             $connection->set($this->key($name, 'opened_at'), (string) time());
+            // Heal any trial slots leaked by a previous half-open episode.
+            $connection->del($this->key($name, 'in_flight'));
         } else {
             $connection->del($this->key($name, 'opened_at'));
         }
@@ -71,6 +94,7 @@ class RedisStore implements Store
             $this->key($name, 'failures'),
             $this->key($name, 'successes'),
             $this->key($name, 'opened_at'),
+            $this->key($name, 'in_flight'),
         );
     }
 

@@ -12,7 +12,7 @@ use Nikola\CircuitBreaker\State;
  */
 class InMemoryStore implements Store
 {
-    /** @var array<string, array{state:State, failures:int, successes:int, failed_at:?int, opened_at:?int}> */
+    /** @var array<string, array{state:State, failures:int, successes:int, in_flight:int, failed_at:?int, opened_at:?int}> */
     protected array $circuits = [];
 
     public function state(string $name): State
@@ -51,12 +51,32 @@ class InMemoryStore implements Store
         return $circuit['successes'];
     }
 
+    public function incrementInFlight(string $name, int $ttl): int
+    {
+        $circuit = $this->ensure($name);
+        $circuit['in_flight']++;
+        $this->circuits[$name] = $circuit;
+
+        return $circuit['in_flight'];
+    }
+
+    public function decrementInFlight(string $name): void
+    {
+        if (! isset($this->circuits[$name])) {
+            return;
+        }
+
+        $this->circuits[$name]['in_flight'] = max(0, $this->circuits[$name]['in_flight'] - 1);
+    }
+
     public function transition(string $name, State $to): void
     {
         $this->circuits[$name] = [
             'state' => $to,
             'failures' => 0,
             'successes' => 0,
+            // Preserve in-flight trials except when opening, which starts a fresh episode.
+            'in_flight' => $to === State::Open ? 0 : ($this->circuits[$name]['in_flight'] ?? 0),
             'failed_at' => null,
             'opened_at' => $to === State::Open ? time() : null,
         ];
@@ -68,7 +88,7 @@ class InMemoryStore implements Store
     }
 
     /**
-     * @return array{state:State, failures:int, successes:int, failed_at:?int, opened_at:?int}
+     * @return array{state:State, failures:int, successes:int, in_flight:int, failed_at:?int, opened_at:?int}
      */
     protected function ensure(string $name): array
     {
@@ -76,6 +96,7 @@ class InMemoryStore implements Store
             'state' => State::Closed,
             'failures' => 0,
             'successes' => 0,
+            'in_flight' => 0,
             'failed_at' => null,
             'opened_at' => null,
         ];

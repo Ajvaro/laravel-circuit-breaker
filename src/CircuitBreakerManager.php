@@ -127,7 +127,7 @@ class CircuitBreakerManager
     }
 
     /**
-     * @return array{failure_threshold:int,success_threshold:int,reset_timeout:int,sample_window:int,handle:array<int,class-string<\Throwable>>}
+     * @return array{failure_threshold:int,success_threshold:int,reset_timeout:int,sample_window:int,half_open_max_attempts:int,handle:array<int,class-string<\Throwable>>}
      */
     protected function configFor(string $name): array
     {
