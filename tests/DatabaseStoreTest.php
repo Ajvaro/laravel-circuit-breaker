@@ -4,10 +4,12 @@ declare(strict_types=1);
 
 namespace Nikola\CircuitBreaker\Tests;
 
+use Illuminate\Database\ConnectionResolverInterface;
 use Illuminate\Support\Facades\Event;
 use Nikola\CircuitBreaker\Events\CircuitOpened;
 use Nikola\CircuitBreaker\Facades\CircuitBreaker;
 use Nikola\CircuitBreaker\State;
+use Nikola\CircuitBreaker\Stores\DatabaseStore;
 use RuntimeException;
 
 class DatabaseStoreTest extends TestCase
@@ -40,6 +42,51 @@ class DatabaseStoreTest extends TestCase
         ]);
 
         Event::assertDispatched(CircuitOpened::class);
+    }
+
+    private function store(): DatabaseStore
+    {
+        return new DatabaseStore($this->app->make(ConnectionResolverInterface::class));
+    }
+
+    public function test_record_failure_counts_within_window_and_resets_once_it_elapses(): void
+    {
+        $store = $this->store();
+
+        $this->assertSame(1, $store->recordFailure('svc', 60)); // first failure creates the row
+        $this->assertSame(2, $store->recordFailure('svc', 60)); // still within the window
+
+        // Backdate the window start so the next failure is treated as a fresh window.
+        $this->app->make(ConnectionResolverInterface::class)->connection()
+            ->table('circuit_breakers')->where('name', 'svc')->update(['failed_at' => time() - 120]);
+
+        $this->assertSame(1, $store->recordFailure('svc', 60));
+    }
+
+    public function test_record_success_increments(): void
+    {
+        $store = $this->store();
+
+        $this->assertSame(1, $store->recordSuccess('svc'));
+        $this->assertSame(2, $store->recordSuccess('svc'));
+        $this->assertSame(3, $store->recordSuccess('svc'));
+    }
+
+    public function test_in_flight_increments_and_decrements_without_going_negative(): void
+    {
+        $store = $this->store();
+
+        $this->assertSame(1, $store->incrementInFlight('svc', 60));
+        $this->assertSame(2, $store->incrementInFlight('svc', 60));
+
+        $store->decrementInFlight('svc');
+        $this->assertSame(2, $store->incrementInFlight('svc', 60));
+
+        // More releases than acquisitions must clamp at zero, not underflow.
+        $store->decrementInFlight('svc');
+        $store->decrementInFlight('svc');
+        $store->decrementInFlight('svc');
+        $this->assertSame(1, $store->incrementInFlight('svc', 60));
     }
 
     public function test_full_lifecycle_through_the_database_store(): void
