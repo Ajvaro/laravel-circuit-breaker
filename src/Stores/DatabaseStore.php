@@ -35,75 +35,38 @@ class DatabaseStore implements Store
 
     public function recordFailure(string $name, int $window): int
     {
-        $now = time();
-        $row = $this->row($name);
+        return $this->mutate($name, function (object $row, int $now) use ($window) {
+            if ($row->failed_at === null || ($now - (int) $row->failed_at) > $window) {
+                $count = 1;
+                $failedAt = $now;
+            } else {
+                $count = (int) $row->failures + 1;
+                $failedAt = (int) $row->failed_at;
+            }
 
-        if ($row === null) {
-            $this->table()->insert(array_merge($this->defaults($name), [
-                'failures' => 1,
-                'failed_at' => $now,
+            return [$count, [
+                'failures' => $count,
+                'failed_at' => $failedAt,
                 'updated_at' => $now,
-            ]));
-
-            return 1;
-        }
-
-        if ($row->failed_at === null || ($now - (int) $row->failed_at) > $window) {
-            $count = 1;
-            $failedAt = $now;
-        } else {
-            $count = (int) $row->failures + 1;
-            $failedAt = (int) $row->failed_at;
-        }
-
-        $this->table()->where('name', $name)->update([
-            'failures' => $count,
-            'failed_at' => $failedAt,
-            'updated_at' => $now,
-        ]);
-
-        return $count;
+            ]];
+        });
     }
 
     public function recordSuccess(string $name): int
     {
-        $now = time();
-        $row = $this->row($name);
+        return $this->mutate($name, function (object $row, int $now) {
+            $count = (int) $row->successes + 1;
 
-        if ($row === null) {
-            $this->table()->insert(array_merge($this->defaults($name), [
-                'successes' => 1,
+            return [$count, [
+                'successes' => $count,
                 'updated_at' => $now,
-            ]));
-
-            return 1;
-        }
-
-        $count = (int) $row->successes + 1;
-
-        $this->table()->where('name', $name)->update([
-            'successes' => $count,
-            'updated_at' => $now,
-        ]);
-
-        return $count;
+            ]];
+        });
     }
 
     public function incrementInFlight(string $name, int $ttl): int
     {
-        return $this->connection()->transaction(function () use ($name, $ttl) {
-            $now = time();
-            $row = $this->table()->where('name', $name)->lockForUpdate()->first();
-
-            if ($row === null) {
-                $this->table()->insert(array_merge($this->defaults($name), [
-                    'in_flight' => 1,
-                    'updated_at' => $now,
-                ]));
-
-                return 1;
-            }
-
+        return $this->mutate($name, function (object $row, int $now) use ($ttl) {
             $current = (int) $row->in_flight;
 
             // Self-heal slots leaked by a probe that never released (e.g. a crash).
@@ -113,12 +76,10 @@ class DatabaseStore implements Store
 
             $count = $current + 1;
 
-            $this->table()->where('name', $name)->update([
+            return [$count, [
                 'in_flight' => $count,
                 'updated_at' => $now,
-            ]);
-
-            return $count;
+            ]];
         });
     }
 
@@ -146,12 +107,48 @@ class DatabaseStore implements Store
             $values['in_flight'] = 0;
         }
 
-        $this->table()->updateOrInsert(['name' => $name], $values);
+        // insertOrIgnore + update rather than updateOrInsert: the latter races
+        // two concurrent transitions into a duplicate-key insert.
+        $this->ensureRow($name);
+        $this->table()->where('name', $name)->update($values);
     }
 
     public function reset(string $name): void
     {
         $this->table()->where('name', $name)->delete();
+    }
+
+    /**
+     * Atomically read-modify-write the named circuit's counters. The row is
+     * created if missing and locked for the duration of the transaction, so
+     * concurrent callers serialize instead of clobbering each other's counts.
+     *
+     * @param  callable(object, int): array{0:int, 1:array<string,mixed>}  $apply
+     */
+    protected function mutate(string $name, callable $apply): int
+    {
+        $this->ensureRow($name);
+
+        return $this->connection()->transaction(function () use ($name, $apply) {
+            $row = $this->table()->where('name', $name)->lockForUpdate()->first()
+                ?? (object) $this->defaults($name);
+
+            [$count, $values] = $apply($row, time());
+
+            $this->table()->where('name', $name)->update($values);
+
+            return $count;
+        }, 3);
+    }
+
+    /**
+     * Ensure a row for the circuit exists without racing on the primary key.
+     */
+    protected function ensureRow(string $name): void
+    {
+        $this->table()->insertOrIgnore(array_merge($this->defaults($name), [
+            'updated_at' => time(),
+        ]));
     }
 
     protected function row(string $name): ?object
