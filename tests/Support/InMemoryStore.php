@@ -69,8 +69,10 @@ class InMemoryStore implements Store
         $this->circuits[$name]['in_flight'] = max(0, $this->circuits[$name]['in_flight'] - 1);
     }
 
-    public function transition(string $name, State $to): void
+    public function transition(string $name, State $to): bool
     {
+        $previous = $this->circuits[$name]['state'] ?? State::Closed;
+
         $this->circuits[$name] = [
             'state' => $to,
             'failures' => 0,
@@ -80,6 +82,8 @@ class InMemoryStore implements Store
             'failed_at' => null,
             'opened_at' => $to === State::Open ? time() : null,
         ];
+
+        return $previous !== $to;
     }
 
     public function reset(string $name): void

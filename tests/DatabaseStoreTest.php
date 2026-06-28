@@ -63,6 +63,15 @@ class DatabaseStoreTest extends TestCase
         $this->assertSame(1, $store->recordFailure('svc', 60));
     }
 
+    public function test_transition_reports_whether_the_state_changed(): void
+    {
+        $store = $this->store();
+
+        $this->assertTrue($store->transition('svc', State::Open));      // created as closed -> open
+        $this->assertFalse($store->transition('svc', State::Open));     // already open
+        $this->assertTrue($store->transition('svc', State::HalfOpen));  // open -> half-open
+    }
+
     public function test_record_success_increments(): void
     {
         $store = $this->store();

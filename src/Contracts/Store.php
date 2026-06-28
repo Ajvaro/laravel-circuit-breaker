@@ -42,8 +42,10 @@ interface Store
 
     /**
      * Move the circuit to the given state, resetting counters. Opening also stamps openedAt.
+     * Returns true only if the state actually changed, so callers can dispatch a
+     * transition event exactly once even when several requests race to transition.
      */
-    public function transition(string $name, State $to): void;
+    public function transition(string $name, State $to): bool;
 
     /**
      * Forget all data for the circuit (returns it to the default closed state).
