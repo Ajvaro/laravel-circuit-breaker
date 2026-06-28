@@ -18,6 +18,17 @@ CLOSED  ──(failures >= failure_threshold)──▶  OPEN
 - **Open** – calls fail fast (throw `CircuitOpenException` or run a fallback) until `reset_timeout` elapses.
 - **Half-open** – up to `half_open_max_attempts` concurrent trial calls are allowed through (the rest fail fast, exactly as if open); enough successes close the circuit, any failure reopens it. This keeps a recovering dependency from being flooded the instant `reset_timeout` elapses.
 
+### How failures are counted
+
+While the circuit is **closed**, opening is driven by a **count of failures within a rolling `sample_window`** — *not* by consecutive failures and *not* by a failure rate. The circuit opens as soon as `failure_threshold` qualifying failures (those whose exception types are listed in `handle`) occur inside the window, **regardless of how many successful calls happen in between**. Successes do not decrement or reset the failure counter; only the window expiring does.
+
+Practical implications:
+
+- A dependency with a steady low error rate can still trip the circuit if it produces `failure_threshold` failures within any `sample_window`. Size the two together for your traffic — e.g. on a high-throughput call, a larger `failure_threshold` and/or a shorter `sample_window` avoids opening on background noise.
+- If you want "trip only on a sustained burst," use a short `sample_window` so stray failures age out before they accumulate.
+
+Once **half-open**, a single qualifying failure reopens the circuit immediately; `failure_threshold` does not apply there.
+
 ## Requirements
 
 - PHP 8.2+
