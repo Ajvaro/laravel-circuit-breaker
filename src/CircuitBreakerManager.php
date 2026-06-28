@@ -2,16 +2,16 @@
 
 declare(strict_types=1);
 
-namespace Nikola\CircuitBreaker;
+namespace Ajvaro\CircuitBreaker;
 
 use Closure;
 use Illuminate\Contracts\Container\Container;
 use Illuminate\Contracts\Redis\Factory as RedisFactory;
 use Illuminate\Database\ConnectionResolverInterface;
 use InvalidArgumentException;
-use Nikola\CircuitBreaker\Contracts\Store;
-use Nikola\CircuitBreaker\Stores\DatabaseStore;
-use Nikola\CircuitBreaker\Stores\RedisStore;
+use Ajvaro\CircuitBreaker\Contracts\Store;
+use Ajvaro\CircuitBreaker\Stores\DatabaseStore;
+use Ajvaro\CircuitBreaker\Stores\RedisStore;
 
 class CircuitBreakerManager
 {

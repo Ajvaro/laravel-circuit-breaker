@@ -2,11 +2,11 @@
 
 declare(strict_types=1);
 
-namespace Nikola\CircuitBreaker\Tests;
+namespace Ajvaro\CircuitBreaker\Tests;
 
 use Illuminate\Support\Facades\Schema;
-use Nikola\CircuitBreaker\Facades\CircuitBreaker;
-use Nikola\CircuitBreaker\State;
+use Ajvaro\CircuitBreaker\Facades\CircuitBreaker;
+use Ajvaro\CircuitBreaker\State;
 use RuntimeException;
 
 class CustomTableNameTest extends TestCase

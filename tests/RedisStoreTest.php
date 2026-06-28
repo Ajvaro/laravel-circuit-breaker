@@ -2,12 +2,12 @@
 
 declare(strict_types=1);
 
-namespace Nikola\CircuitBreaker\Tests;
+namespace Ajvaro\CircuitBreaker\Tests;
 
 use Illuminate\Support\Facades\Redis;
-use Nikola\CircuitBreaker\Facades\CircuitBreaker;
-use Nikola\CircuitBreaker\State;
-use Nikola\CircuitBreaker\Stores\RedisStore;
+use Ajvaro\CircuitBreaker\Facades\CircuitBreaker;
+use Ajvaro\CircuitBreaker\State;
+use Ajvaro\CircuitBreaker\Stores\RedisStore;
 use RuntimeException;
 use Throwable;
 

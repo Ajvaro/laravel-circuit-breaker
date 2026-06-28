@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace Nikola\CircuitBreaker\Contracts;
+namespace Ajvaro\CircuitBreaker\Contracts;
 
-use Nikola\CircuitBreaker\State;
+use Ajvaro\CircuitBreaker\State;
 
 interface Store
 {

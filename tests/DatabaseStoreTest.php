@@ -2,14 +2,14 @@
 
 declare(strict_types=1);
 
-namespace Nikola\CircuitBreaker\Tests;
+namespace Ajvaro\CircuitBreaker\Tests;
 
 use Illuminate\Database\ConnectionResolverInterface;
 use Illuminate\Support\Facades\Event;
-use Nikola\CircuitBreaker\Events\CircuitOpened;
-use Nikola\CircuitBreaker\Facades\CircuitBreaker;
-use Nikola\CircuitBreaker\State;
-use Nikola\CircuitBreaker\Stores\DatabaseStore;
+use Ajvaro\CircuitBreaker\Events\CircuitOpened;
+use Ajvaro\CircuitBreaker\Facades\CircuitBreaker;
+use Ajvaro\CircuitBreaker\State;
+use Ajvaro\CircuitBreaker\Stores\DatabaseStore;
 use RuntimeException;
 
 class DatabaseStoreTest extends TestCase

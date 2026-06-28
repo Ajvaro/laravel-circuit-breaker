@@ -2,12 +2,12 @@
 
 declare(strict_types=1);
 
-namespace Nikola\CircuitBreaker\Stores;
+namespace Ajvaro\CircuitBreaker\Stores;
 
 use Illuminate\Contracts\Redis\Connection;
 use Illuminate\Contracts\Redis\Factory as RedisFactory;
-use Nikola\CircuitBreaker\Contracts\Store;
-use Nikola\CircuitBreaker\State;
+use Ajvaro\CircuitBreaker\Contracts\Store;
+use Ajvaro\CircuitBreaker\State;
 
 class RedisStore implements Store
 {

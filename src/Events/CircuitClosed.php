@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Nikola\CircuitBreaker\Events;
+namespace Ajvaro\CircuitBreaker\Events;
 
 class CircuitClosed
 {

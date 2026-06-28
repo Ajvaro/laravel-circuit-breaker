@@ -2,15 +2,15 @@
 
 declare(strict_types=1);
 
-namespace Nikola\CircuitBreaker\Tests;
+namespace Ajvaro\CircuitBreaker\Tests;
 
 use Illuminate\Contracts\Events\Dispatcher;
-use Nikola\CircuitBreaker\CircuitBreaker;
-use Nikola\CircuitBreaker\Contracts\Store;
-use Nikola\CircuitBreaker\Events\CircuitOpened;
-use Nikola\CircuitBreaker\Exceptions\CircuitOpenException;
-use Nikola\CircuitBreaker\State;
-use Nikola\CircuitBreaker\Tests\Support\InMemoryStore;
+use Ajvaro\CircuitBreaker\CircuitBreaker;
+use Ajvaro\CircuitBreaker\Contracts\Store;
+use Ajvaro\CircuitBreaker\Events\CircuitOpened;
+use Ajvaro\CircuitBreaker\Exceptions\CircuitOpenException;
+use Ajvaro\CircuitBreaker\State;
+use Ajvaro\CircuitBreaker\Tests\Support\InMemoryStore;
 use PHPUnit\Framework\TestCase;
 use RuntimeException;
 
