@@ -203,20 +203,23 @@ class CircuitBreaker
 
     protected function toOpen(): void
     {
-        $this->store->transition($this->name, State::Open);
-        $this->dispatch(new CircuitOpened($this->name));
+        if ($this->store->transition($this->name, State::Open)) {
+            $this->dispatch(new CircuitOpened($this->name));
+        }
     }
 
     protected function toHalfOpen(): void
     {
-        $this->store->transition($this->name, State::HalfOpen);
-        $this->dispatch(new CircuitHalfOpened($this->name));
+        if ($this->store->transition($this->name, State::HalfOpen)) {
+            $this->dispatch(new CircuitHalfOpened($this->name));
+        }
     }
 
     protected function toClosed(): void
     {
-        $this->store->transition($this->name, State::Closed);
-        $this->dispatch(new CircuitClosed($this->name));
+        if ($this->store->transition($this->name, State::Closed)) {
+            $this->dispatch(new CircuitClosed($this->name));
+        }
     }
 
     protected function dispatch(object $event): void

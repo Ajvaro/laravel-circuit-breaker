@@ -70,11 +70,19 @@ class RedisStore implements Store
         }
     }
 
-    public function transition(string $name, State $to): void
+    public function transition(string $name, State $to): bool
     {
         $connection = $this->connection();
 
-        $connection->set($this->key($name, 'state'), $to->value);
+        // GETSET atomically swaps the state and hands back the previous value, so
+        // exactly one of several racing callers observes the change.
+        $previous = $connection->getset($this->key($name, 'state'), $to->value);
+        $changed = ($previous === null ? State::Closed : State::from((string) $previous)) !== $to;
+
+        if (! $changed) {
+            return false;
+        }
+
         $connection->del($this->key($name, 'failures'));
         $connection->del($this->key($name, 'successes'));
 
@@ -85,6 +93,8 @@ class RedisStore implements Store
         } else {
             $connection->del($this->key($name, 'opened_at'));
         }
+
+        return true;
     }
 
     public function reset(string $name): void

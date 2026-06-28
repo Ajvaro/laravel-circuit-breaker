@@ -4,8 +4,10 @@ declare(strict_types=1);
 
 namespace Nikola\CircuitBreaker\Tests;
 
+use Illuminate\Contracts\Events\Dispatcher;
 use Nikola\CircuitBreaker\CircuitBreaker;
 use Nikola\CircuitBreaker\Contracts\Store;
+use Nikola\CircuitBreaker\Events\CircuitOpened;
 use Nikola\CircuitBreaker\Exceptions\CircuitOpenException;
 use Nikola\CircuitBreaker\State;
 use Nikola\CircuitBreaker\Tests\Support\InMemoryStore;
@@ -14,7 +16,7 @@ use RuntimeException;
 
 class CircuitBreakerTest extends TestCase
 {
-    private function breaker(Store $store, array $overrides = []): CircuitBreaker
+    private function breaker(Store $store, array $overrides = [], ?Dispatcher $events = null): CircuitBreaker
     {
         return new CircuitBreaker('service', $store, array_merge([
             'failure_threshold' => 2,
@@ -23,7 +25,7 @@ class CircuitBreakerTest extends TestCase
             'sample_window' => 60,
             'half_open_max_attempts' => 1,
             'handle' => [\Throwable::class],
-        ], $overrides));
+        ], $overrides), $events);
     }
 
     public function test_successful_calls_pass_through_and_keep_circuit_closed(): void
@@ -186,5 +188,45 @@ class CircuitBreakerTest extends TestCase
         }
 
         $this->assertSame(State::Closed, $breaker->state());
+    }
+
+    public function test_transition_reports_whether_the_state_changed(): void
+    {
+        $store = new InMemoryStore();
+
+        $this->assertTrue($store->transition('service', State::Open));   // closed -> open
+        $this->assertFalse($store->transition('service', State::Open));  // already open
+        $this->assertTrue($store->transition('service', State::Closed)); // open -> closed
+    }
+
+    public function test_transition_event_is_dispatched_only_once_when_callers_race(): void
+    {
+        // A store that always reports half-open forces every recordFailure() to
+        // attempt the half-open -> open transition, standing in for several
+        // requests racing to open the circuit at the same time.
+        $store = new class extends InMemoryStore {
+            public function state(string $name): State
+            {
+                return State::HalfOpen;
+            }
+        };
+
+        $dispatched = [];
+        $events = $this->createMock(Dispatcher::class);
+        $events->method('dispatch')->willReturnCallback(function ($event) use (&$dispatched) {
+            $dispatched[] = $event;
+
+            return null;
+        });
+
+        $breaker = $this->breaker($store, [], $events);
+
+        $breaker->recordFailure();
+        $breaker->recordFailure();
+        $breaker->recordFailure();
+
+        $opened = array_filter($dispatched, fn ($e) => $e instanceof CircuitOpened);
+
+        $this->assertCount(1, $opened);
     }
 }

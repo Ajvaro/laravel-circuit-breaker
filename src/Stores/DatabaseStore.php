@@ -91,7 +91,7 @@ class DatabaseStore implements Store
             ->decrement('in_flight', 1, ['updated_at' => time()]);
     }
 
-    public function transition(string $name, State $to): void
+    public function transition(string $name, State $to): bool
     {
         $values = [
             'state' => $to->value,
@@ -107,10 +107,16 @@ class DatabaseStore implements Store
             $values['in_flight'] = 0;
         }
 
-        // insertOrIgnore + update rather than updateOrInsert: the latter races
-        // two concurrent transitions into a duplicate-key insert.
+        // insertOrIgnore + a conditional update rather than updateOrInsert: the
+        // latter races two concurrent transitions into a duplicate-key insert.
+        // The "state <> target" guard makes the update atomic and idempotent, so
+        // its affected-row count tells us whether this caller flipped the state.
         $this->ensureRow($name);
-        $this->table()->where('name', $name)->update($values);
+
+        return $this->table()
+            ->where('name', $name)
+            ->where('state', '!=', $to->value)
+            ->update($values) > 0;
     }
 
     public function reset(string $name): void
