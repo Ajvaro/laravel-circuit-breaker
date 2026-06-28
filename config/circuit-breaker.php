@@ -43,10 +43,13 @@ return [
     | Default Circuit Settings
     |--------------------------------------------------------------------------
     |
-    | failure_threshold     : consecutive/windowed failures before the circuit opens.
+    | failure_threshold     : number of failures within sample_window before the
+    |                         circuit opens (a windowed count, not consecutive and
+    |                         not a rate; successes do not reset it).
     | success_threshold     : successes in half-open state before the circuit closes.
     | reset_timeout         : seconds a circuit stays open before a trial (half-open).
-    | sample_window         : seconds over which failures are counted while closed.
+    | sample_window         : rolling seconds over which closed-state failures are
+    |                         counted; the count resets only when the window elapses.
     | half_open_max_attempts: concurrent trial calls allowed while half-open, so a
     |                         recovering dependency is probed rather than flooded.
     | handle                : exception types that count as failures.
