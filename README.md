@@ -1,5 +1,7 @@
 # Laravel Circuit Breaker
 
+[![tests](https://github.com/Ajvaro/laravel-circuit-breaker/actions/workflows/tests.yml/badge.svg)](https://github.com/Ajvaro/laravel-circuit-breaker/actions/workflows/tests.yml)
+
 A small, framework-native implementation of the **circuit breaker** pattern for Laravel.
 
 When your app talks to external or internal services (payment gateways, search, internal microservices), a slow or failing dependency can cascade into your own app: piling up requests, exhausting workers, and increasing latency. A circuit breaker watches failures and, once a threshold is crossed, "opens" the circuit to **fail fast** (or fall back) instead of hammering a broken dependency. After a cooldown it lets a few trial requests through to see whether the dependency has recovered.
