@@ -190,6 +190,29 @@ class CircuitBreakerTest extends TestCase
         $this->assertSame(State::Closed, $breaker->state());
     }
 
+    public function test_unhandled_exception_propagates_past_the_fallback(): void
+    {
+        $breaker = $this->breaker(new InMemoryStore(), ['handle' => [\LogicException::class]]);
+
+        $fallbackCalled = false;
+
+        try {
+            $breaker->call(
+                fn () => throw new RuntimeException('boom'),
+                function () use (&$fallbackCalled) {
+                    $fallbackCalled = true;
+
+                    return 'fallback';
+                },
+            );
+            $this->fail('Expected the unhandled exception to propagate.');
+        } catch (RuntimeException) {
+            // expected: an exception not in "handle" bypasses the fallback
+        }
+
+        $this->assertFalse($fallbackCalled);
+    }
+
     public function test_transition_reports_whether_the_state_changed(): void
     {
         $store = new InMemoryStore();

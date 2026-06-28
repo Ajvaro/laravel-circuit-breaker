@@ -42,13 +42,19 @@ class CircuitBreaker
     /**
      * Execute the protected action, applying circuit breaker semantics.
      *
+     * The fallback, when given, runs in two cases: the circuit is open (the
+     * action is rejected) or the action throws an exception whose type is listed
+     * in the "handle" config. An exception NOT listed in "handle" is not treated
+     * as a failure and propagates to the caller even when a fallback is provided,
+     * so the fallback only ever sees rejections and handled failures.
+     *
      * @template TReturn
      * @param  callable():TReturn  $action
-     * @param  (callable(Throwable):TReturn)|null  $fallback  Invoked when the call is rejected or fails.
+     * @param  (callable(Throwable):TReturn)|null  $fallback  Invoked on a rejection or a handled failure; see above.
      * @return TReturn
      *
      * @throws CircuitOpenException When the circuit is open and no fallback is given.
-     * @throws Throwable When the action throws and no fallback is given.
+     * @throws Throwable When the action throws and the exception is unhandled, or no fallback is given.
      */
     public function call(callable $action, ?callable $fallback = null): mixed
     {

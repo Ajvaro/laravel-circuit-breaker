@@ -121,6 +121,8 @@ $rates = CircuitBreaker::for('fx-rates')->call(
 );
 ```
 
+The fallback runs only for **rejections** (circuit open) and **handled failures** — exceptions whose type is listed in `handle`. An exception *not* in `handle` is not counted as a failure and **propagates past the fallback** to the caller. So if you narrow `handle` to, say, `[ConnectionException::class]`, a `ValidationException` from the action will surface to the caller untouched rather than being swallowed by the fallback.
+
 ### Short proxy form
 
 ```php
