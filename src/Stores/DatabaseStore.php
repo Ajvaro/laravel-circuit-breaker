@@ -23,7 +23,9 @@ class DatabaseStore implements Store
     {
         $row = $this->row($name);
 
-        return $row !== null ? State::from($row->state) : State::Closed;
+        // Fail safe to closed rather than throwing on a missing or unrecognized
+        // value: state() is on the hot path of every protected call.
+        return $row !== null ? (State::tryFrom($row->state) ?? State::Closed) : State::Closed;
     }
 
     public function openedAt(string $name): ?int

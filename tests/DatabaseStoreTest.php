@@ -72,6 +72,15 @@ class DatabaseStoreTest extends TestCase
         $this->assertTrue($store->transition('svc', State::HalfOpen));  // open -> half-open
     }
 
+    public function test_unrecognized_stored_state_falls_back_to_closed(): void
+    {
+        $this->app->make(ConnectionResolverInterface::class)->connection()
+            ->table('circuit_breakers')->insert(['name' => 'svc', 'state' => 'bogus']);
+
+        // A corrupt value must not throw on the hot path; it degrades to closed.
+        $this->assertSame(State::Closed, $this->store()->state('svc'));
+    }
+
     public function test_record_success_increments(): void
     {
         $store = $this->store();

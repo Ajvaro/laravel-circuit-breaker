@@ -22,7 +22,9 @@ class RedisStore implements Store
     {
         $value = $this->connection()->get($this->key($name, 'state'));
 
-        return $value !== null ? State::from((string) $value) : State::Closed;
+        // Fail safe to closed rather than throwing on a missing or unrecognized
+        // value: state() is on the hot path of every protected call.
+        return $value !== null ? (State::tryFrom((string) $value) ?? State::Closed) : State::Closed;
     }
 
     public function openedAt(string $name): ?int
@@ -77,7 +79,7 @@ class RedisStore implements Store
         // GETSET atomically swaps the state and hands back the previous value, so
         // exactly one of several racing callers observes the change.
         $previous = $connection->getset($this->key($name, 'state'), $to->value);
-        $changed = ($previous === null ? State::Closed : State::from((string) $previous)) !== $to;
+        $changed = ($previous === null ? State::Closed : (State::tryFrom((string) $previous) ?? State::Closed)) !== $to;
 
         if (! $changed) {
             return false;
