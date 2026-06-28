@@ -88,7 +88,11 @@ class CircuitBreaker
             }
         }
 
-        $this->recordSuccess();
+        // Only a half-open trial needs to record success (to drive recovery).
+        // A success while closed is a no-op, so skip it and the extra state read.
+        if ($permit === self::PERMIT_PROBE) {
+            $this->recordProbeSuccess();
+        }
 
         return $result;
     }
@@ -166,10 +170,16 @@ class CircuitBreaker
 
     public function recordSuccess(): void
     {
-        if ($this->store->state($this->name) !== State::HalfOpen) {
-            return;
+        if ($this->store->state($this->name) === State::HalfOpen) {
+            $this->recordProbeSuccess();
         }
+    }
 
+    /**
+     * Record a half-open trial success, closing the circuit once enough succeed.
+     */
+    protected function recordProbeSuccess(): void
+    {
         $count = $this->store->recordSuccess($this->name);
 
         if ($count >= $this->config['success_threshold']) {

@@ -10,7 +10,7 @@ return new class extends Migration
 {
     public function up(): void
     {
-        Schema::create('circuit_breakers', function (Blueprint $table) {
+        Schema::create($this->table(), function (Blueprint $table) {
             $table->string('name')->primary();
             $table->string('state')->default('closed');
             $table->unsignedInteger('failures')->default(0);
@@ -24,6 +24,11 @@ return new class extends Migration
 
     public function down(): void
     {
-        Schema::dropIfExists('circuit_breakers');
+        Schema::dropIfExists($this->table());
+    }
+
+    private function table(): string
+    {
+        return config('circuit-breaker.stores.database.table', 'circuit_breakers');
     }
 };
