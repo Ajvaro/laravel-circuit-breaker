@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Nikola\CircuitBreaker;
+namespace Ajvaro\CircuitBreaker;
 
 enum State: string
 {

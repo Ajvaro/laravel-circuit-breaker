@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Nikola\CircuitBreaker\Exceptions;
+namespace Ajvaro\CircuitBreaker\Exceptions;
 
 use RuntimeException;
 

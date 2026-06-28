@@ -39,7 +39,7 @@ Once **half-open**, a single qualifying failure reopens the circuit immediately;
 ## Installation
 
 ```bash
-composer require nikola/laravel-circuit-breaker
+composer require ajvaro/laravel-circuit-breaker
 ```
 
 The service provider and `CircuitBreaker` facade are auto-discovered.
@@ -103,7 +103,7 @@ return [
 
 ```php
 use Illuminate\Support\Facades\Http;
-use Nikola\CircuitBreaker\Facades\CircuitBreaker;
+use Ajvaro\CircuitBreaker\Facades\CircuitBreaker;
 
 $response = CircuitBreaker::for('payments')->call(
     fn () => Http::throw()->post('https://api.provider.com/charge', $payload),
@@ -145,9 +145,9 @@ $breaker->reset();        // force back to closed
 
 Lifecycle transitions dispatch events you can listen to (e.g. for logging or alerting):
 
-- `Nikola\CircuitBreaker\Events\CircuitOpened`
-- `Nikola\CircuitBreaker\Events\CircuitHalfOpened`
-- `Nikola\CircuitBreaker\Events\CircuitClosed`
+- `Ajvaro\CircuitBreaker\Events\CircuitOpened`
+- `Ajvaro\CircuitBreaker\Events\CircuitHalfOpened`
+- `Ajvaro\CircuitBreaker\Events\CircuitClosed`
 
 Each carries the circuit name via `$event->circuit`.
 
@@ -167,14 +167,14 @@ Event::listen(CircuitOpened::class, function (CircuitOpened $event) {
 ### Custom drivers
 
 ```php
-use Nikola\CircuitBreaker\Facades\CircuitBreaker;
+use Ajvaro\CircuitBreaker\Facades\CircuitBreaker;
 
 CircuitBreaker::extend('apcu', function (array $config, $container) {
     return new \App\CircuitBreaker\ApcuStore($config['prefix'] ?? 'cb:');
 });
 ```
 
-Implement `Nikola\CircuitBreaker\Contracts\Store` for any backend.
+Implement `Ajvaro\CircuitBreaker\Contracts\Store` for any backend.
 
 ## Testing
 

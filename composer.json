@@ -1,5 +1,5 @@
 {
-    "name": "nikola/laravel-circuit-breaker",
+    "name": "ajvaro/laravel-circuit-breaker",
     "description": "Circuit breaker pattern for Laravel: protect calls to external/internal services with named circuits, configurable thresholds, and Redis or database state stores.",
     "keywords": [
         "laravel",
@@ -21,21 +21,21 @@
     },
     "autoload": {
         "psr-4": {
-            "Nikola\\CircuitBreaker\\": "src/"
+            "Ajvaro\\CircuitBreaker\\": "src/"
         }
     },
     "autoload-dev": {
         "psr-4": {
-            "Nikola\\CircuitBreaker\\Tests\\": "tests/"
+            "Ajvaro\\CircuitBreaker\\Tests\\": "tests/"
         }
     },
     "extra": {
         "laravel": {
             "providers": [
-                "Nikola\\CircuitBreaker\\CircuitBreakerServiceProvider"
+                "Ajvaro\\CircuitBreaker\\CircuitBreakerServiceProvider"
             ],
             "aliases": {
-                "CircuitBreaker": "Nikola\\CircuitBreaker\\Facades\\CircuitBreaker"
+                "CircuitBreaker": "Ajvaro\\CircuitBreaker\\Facades\\CircuitBreaker"
             }
         }
     },

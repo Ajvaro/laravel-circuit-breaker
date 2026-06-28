@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-namespace Nikola\CircuitBreaker\Tests;
+namespace Ajvaro\CircuitBreaker\Tests;
 
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Nikola\CircuitBreaker\CircuitBreakerServiceProvider;
+use Ajvaro\CircuitBreaker\CircuitBreakerServiceProvider;
 use Orchestra\Testbench\TestCase as Orchestra;
 
 abstract class TestCase extends Orchestra

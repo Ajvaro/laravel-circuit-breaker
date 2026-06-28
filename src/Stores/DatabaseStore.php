@@ -2,13 +2,13 @@
 
 declare(strict_types=1);
 
-namespace Nikola\CircuitBreaker\Stores;
+namespace Ajvaro\CircuitBreaker\Stores;
 
 use Illuminate\Database\ConnectionInterface;
 use Illuminate\Database\ConnectionResolverInterface;
 use Illuminate\Database\Query\Builder;
-use Nikola\CircuitBreaker\Contracts\Store;
-use Nikola\CircuitBreaker\State;
+use Ajvaro\CircuitBreaker\Contracts\Store;
+use Ajvaro\CircuitBreaker\State;
 
 class DatabaseStore implements Store
 {

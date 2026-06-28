@@ -2,14 +2,14 @@
 
 declare(strict_types=1);
 
-namespace Nikola\CircuitBreaker;
+namespace Ajvaro\CircuitBreaker;
 
 use Illuminate\Contracts\Events\Dispatcher;
-use Nikola\CircuitBreaker\Contracts\Store;
-use Nikola\CircuitBreaker\Events\CircuitClosed;
-use Nikola\CircuitBreaker\Events\CircuitHalfOpened;
-use Nikola\CircuitBreaker\Events\CircuitOpened;
-use Nikola\CircuitBreaker\Exceptions\CircuitOpenException;
+use Ajvaro\CircuitBreaker\Contracts\Store;
+use Ajvaro\CircuitBreaker\Events\CircuitClosed;
+use Ajvaro\CircuitBreaker\Events\CircuitHalfOpened;
+use Ajvaro\CircuitBreaker\Events\CircuitOpened;
+use Ajvaro\CircuitBreaker\Exceptions\CircuitOpenException;
 use Throwable;
 
 class CircuitBreaker
